@@ -26,6 +26,15 @@ EOF
 
 RUN yum -y install rocm hipcc && yum clean all
 
+# Add ROCm libraries to the linker path
+RUN  tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
+/opt/rocm/lib
+/opt/rocm/lib64
+EOF
+
+# Set environment variables for ROCm
+ENV PATH=$PATH:/opt/rocm-6.1.2/bin
+
 #####################################################################################################
 
 # PyTorch Installation Stage
@@ -39,15 +48,6 @@ RUN python3 -m pip install --upgrade pip
 # Verify if these deps are required for training-operator
 RUN python3 -m pip install --no-cache-dir tokenizers pandas
 RUN python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
-
-# Add ROCm libraries to the linker path
-RUN  tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
-/opt/rocm/lib
-/opt/rocm/lib64
-EOF
-
-# Set environment variables for ROCm
-ENV PATH=$PATH:/opt/rocm-6.1.2/bin
 
 RUN pip install tensorboardX==2.6.2
 
@@ -63,4 +63,4 @@ RUN chgrp -R 0 /opt/mnist \
 
 WORKDIR /opt/mnist/src
 
-ENTRYPOINT ["python", "/opt/mnist/src/mnist.py"]
+ENTRYPOINT ["python3", "/opt/mnist/src/mnist.py"]
