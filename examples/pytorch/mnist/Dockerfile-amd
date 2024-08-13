@@ -3,34 +3,34 @@ ARG BASE_IMAGE="registry.access.redhat.com/ubi9/ubi:latest"
 FROM ${BASE_IMAGE} as rocm-base
 
 # Add ROCm repository and install ROCm packages
-RUN echo "Base image is ${BASE_IMAGE}"
-RUN <<EOF
-cat <<EOD > /etc/yum.repos.d/amdgpu.repo
-[amdgpu]
-name=amdgpu
-baseurl=https://repo.radeon.com/amdgpu/6.1.2/rhel/9.4/main/x86_64/
-enabled=1
-priority=50
-gpgcheck=1
-gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
-
-[ROCm-6.1.2]
-name=ROCm6.1.2
-baseurl=https://repo.radeon.com/rocm/rhel9/6.1.2/main
-enabled=1
-priority=50
-gpgcheck=1
-gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
-EOD
-EOF
-
-RUN yum -y install rocm hipcc && yum clean all
-
-# Add ROCm libraries to the linker path
-RUN  tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
-/opt/rocm/lib
-/opt/rocm/lib64
-EOF
+#RUN echo "Base image is ${BASE_IMAGE}"
+#RUN <<EOF
+#cat <<EOD > /etc/yum.repos.d/amdgpu.repo
+#[amdgpu]
+#name=amdgpu
+#baseurl=https://repo.radeon.com/amdgpu/6.1.2/rhel/9.4/main/x86_64/
+#enabled=1
+#priority=50
+#gpgcheck=1
+#gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
+#
+#[ROCm-6.1.2]
+#name=ROCm6.1.2
+#baseurl=https://repo.radeon.com/rocm/rhel9/6.1.2/main
+#enabled=1
+#priority=50
+#gpgcheck=1
+#gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
+#EOD
+#EOF
+#
+#RUN yum -y install rocm hipcc && yum clean all
+#
+## Add ROCm libraries to the linker path
+#RUN  tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
+#/opt/rocm/lib
+#/opt/rocm/lib64
+#EOF
 
 # Set environment variables for ROCm
 ENV PATH=$PATH:/opt/rocm-6.1.2/bin
@@ -54,13 +54,12 @@ RUN pip install tensorboardX==2.6.2
 ###################################################################################################
 FROM pytorch as app
 
-RUN mkdir -p /opt/mnist/src
+RUN mkdir -p /opt/mnist
 
-COPY mnist.py /opt/mnist/src/mnist.py
+WORKDIR /opt/mnist/src
+ADD mnist.py /opt/mnist/src/mnist.py
 
 RUN chgrp -R 0 /opt/mnist \
     && chmod -R g+rwX /opt/mnist
 
-WORKDIR /opt/mnist/src
-
-ENTRYPOINT ["python3", "/opt/mnist/src/mnist.py"]
+ENTRYPOINT ["python", "/opt/mnist/src/mnist.py"]
