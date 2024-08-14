@@ -1,8 +1,7 @@
 apiVersion: "kubeflow.org/v1"
-kind: PyTorchJob
+kind: "PyTorchJob"
 metadata:
-  name: pytorch-simple
-  namespace: kubeflow-training-amd-gpu
+  name: "pytorch-dist-mnist-gloo"
 spec:
   pytorchReplicaSpecs:
     Master:
@@ -12,12 +11,14 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: quay.io/vnarsing/pytorch:dev
-              imagePullPolicy: Always
-              command:
-                - "python3"
-                - "/opt/pytorch-mnist/mnist.py"
-                - "--epochs=1"
+              image: image-registry.openshift-image-registry.svc:5000/kubeflow-training-amd-gpu/kubeflow-training:amd
+              args: ["--backend", "gloo"]
+              # Comment out the below resources to use the CPU.
+#              resources:
+#                limits:
+#                  "amd.com/gpu" : "1"
+#              requests:
+#	              "amd.com/gpu" : "1"
     Worker:
       replicas: 1
       restartPolicy: OnFailure
@@ -25,9 +26,11 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: quay.io/vnarsing/pytorch:dev
-              imagePullPolicy: Always
-              command:
-                - "python3"
-                - "/opt/pytorch-mnist/mnist.py"
-                - "--epochs=1"
+              image: image-registry.openshift-image-registry.svc:5000/kubeflow-training-amd-gpu/kubeflow-training:amd
+              args: ["--backend", "gloo"]
+              # Comment out the below resources to use the CPU.
+#              resources:
+#                limits:
+#                  "amd.com/gpu": "1"
+#                requests:
+#                  "amd.com/gpu": "1"
