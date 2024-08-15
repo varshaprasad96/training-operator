@@ -53,9 +53,6 @@ RUN python -m pip install torch torchvision torchaudio --index-url https://downl
 
 RUN pip install tensorboardX==2.6.2
 
-###################################################################################################
-FROM pytorch as app
-
 RUN mkdir -p /opt/mnist
 
 WORKDIR /opt/mnist/src
