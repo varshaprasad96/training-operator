@@ -11,14 +11,8 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: image-registry.openshift-image-registry.svc:5000/kubeflow-training-amd-gpu/kubeflow-training:amd
+              image: image-registry.openshift-image-registry.svc:5000/kubeflow-training-amd-gpu/kubeflow-training@sha256:a1c69c16744d519df0272f1953b8b8ff77dba872fe7125b7a8015ddc49f30986
               args: ["--backend", "gloo"]
-              # Comment out the below resources to use the CPU.
-#              resources:
-#                limits:
-#                  "amd.com/gpu" : "1"
-#              requests:
-#	              "amd.com/gpu" : "1"
     Worker:
       replicas: 1
       restartPolicy: OnFailure
@@ -26,7 +20,7 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: image-registry.openshift-image-registry.svc:5000/kubeflow-training-amd-gpu/kubeflow-training:amd
+              image: image-registry.openshift-image-registry.svc:5000/kubeflow-training-amd-gpu/kubeflow-training@sha256:a1c69c16744d519df0272f1953b8b8ff77dba872fe7125b7a8015ddc49f30986
               args: ["--backend", "gloo"]
               # Comment out the below resources to use the CPU.
               resources:
