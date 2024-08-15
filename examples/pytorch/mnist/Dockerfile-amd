@@ -2,7 +2,40 @@
 ARG BASE_IMAGE="registry.access.redhat.com/ubi9/ubi:latest"
 FROM ${BASE_IMAGE} as rocm-base
 
-# Add ROCm repository and install ROCm packages
+# Install Python and dependencies
+RUN yum -y install python3 python3-pip python3-devel patch
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+ENV PATH="/usr/local/bin/python3:${PATH}"
+
+RUN python3 --version
+
+# Upgrade pip and install Python packages
+RUN python -m pip install --upgrade pip
+# Verify if these deps are required for training-operator
+RUN python -m pip install --no-cache-dir tokenizers pandas
+RUN python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+
+RUN pip install tensorboardX==2.6.2
+
+RUN mkdir -p /opt/mnist
+
+WORKDIR /opt/mnist/src
+ADD mnist.py /opt/mnist/src/mnist.py
+
+RUN chgrp -R 0 /opt/mnist \
+    && chmod -R g+rwX /opt/mnist
+
+ENTRYPOINT ["python", "/opt/mnist/src/mnist.py"]
+
+
+# Base Image with ROCm enabled ###########################################################################################
+
+## ROCm Base Stage
+#ARG BASE_IMAGE="registry.access.redhat.com/ubi9/ubi:latest"
+#FROM ${BASE_IMAGE} as rocm-base
+#
+## Add ROCm repository and install ROCm packages
 #RUN echo "Base image is ${BASE_IMAGE}"
 #RUN <<EOF
 #cat <<EOD > /etc/yum.repos.d/amdgpu.repo
@@ -31,34 +64,34 @@ FROM ${BASE_IMAGE} as rocm-base
 #/opt/rocm/lib
 #/opt/rocm/lib64
 #EOF
-
-# Set environment variables for ROCm
-ENV PATH=$PATH:/opt/rocm-6.1.2/bin
-
-#####################################################################################################
-
-# PyTorch Installation Stage
-FROM rocm-base as pytorch
-
-# Install Python and dependencies
-RUN yum -y install python3 python3-pip python3-devel patch
-
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# Upgrade pip and install Python packages
-RUN python -m pip install --upgrade pip
-# Verify if these deps are required for training-operator
-RUN python -m pip install --no-cache-dir tokenizers pandas
-RUN python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
-
-RUN pip install tensorboardX==2.6.2
-
-RUN mkdir -p /opt/mnist
-
-WORKDIR /opt/mnist/src
-ADD mnist.py /opt/mnist/src/mnist.py
-
-RUN chgrp -R 0 /opt/mnist \
-    && chmod -R g+rwX /opt/mnist
-
-ENTRYPOINT ["python", "/opt/mnist/src/mnist.py"]
+#
+## Set environment variables for ROCm
+#ENV PATH=$PATH:/opt/rocm-6.1.2/bin
+#
+######################################################################################################
+#
+## PyTorch Installation Stage
+#FROM rocm-base as pytorch
+#
+## Install Python and dependencies
+#RUN yum -y install python3 python3-pip python3-devel patch
+#
+#RUN ln -s /usr/bin/python3 /usr/bin/python
+#
+## Upgrade pip and install Python packages
+#RUN python -m pip install --upgrade pip
+## Verify if these deps are required for training-operator
+#RUN python -m pip install --no-cache-dir tokenizers pandas
+#RUN python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+#
+#RUN pip install tensorboardX==2.6.2
+#
+#RUN mkdir -p /opt/mnist
+#
+#WORKDIR /opt/mnist/src
+#ADD mnist.py /opt/mnist/src/mnist.py
+#
+#RUN chgrp -R 0 /opt/mnist \
+#    && chmod -R g+rwX /opt/mnist
+#
+#ENTRYPOINT ["python", "/opt/mnist/src/mnist.py"]
