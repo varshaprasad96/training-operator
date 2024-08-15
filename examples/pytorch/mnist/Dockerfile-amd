@@ -8,7 +8,8 @@ ARG PYTHON_VERSION=3.9
 RUN yum -y install python${PYTHON_VERSION} python${PYTHON_VERSION}-pip python${PYTHON_VERSION}-devel patch
 
 RUN ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python
-ENV PATH="/usr/local/bin/python${PYTHON_VERSION}:${PATH}"
+RUN cp -r /usr/bin/python3 /usr/bin/python
+ENV PATH="/usr/bin/python:${PATH}"
 
 RUN echo "Python version:" && python --version && sleep 20
 
@@ -28,7 +29,7 @@ ADD mnist.py /opt/mnist/src/mnist.py
 RUN chgrp -R 0 /opt/mnist \
     && chmod -R g+rwX /opt/mnist
 
-#ENTRYPOINT ["python${PYTHON_VERSION}", "/opt/mnist/src/mnist.py"]
+ENTRYPOINT ["python3", "/opt/mnist/src/mnist.py"]
 
 
 # Base Image with ROCm enabled ###########################################################################################
