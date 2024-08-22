@@ -24,10 +24,9 @@ RUN echo "[amdgpu]" > /etc/yum.repos.d/amdgpu.repo && \
 RUN yum -y install rocm hipcc && yum clean all
 
 # Add ROCm libraries to the linker path
-RUN  tee --append /etc/ld.so.conf.d/rocm.conf <<EOF
-/opt/rocm/lib
-/opt/rocm/lib64
-EOF
+RUN echo "/opt/rocm/lib" >> /etc/ld.so.conf.d/rocm.conf && \
+    echo "/opt/rocm/lib64" >> /etc/ld.so.conf.d/rocm.conf
+
 
 # Set environment variables for ROCm
 ENV PATH=$PATH:/opt/rocm-6.1.2/bin
