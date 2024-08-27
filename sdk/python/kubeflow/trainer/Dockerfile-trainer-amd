@@ -1,0 +1,70 @@
+# Base Image with ROCm enabled ###########################################################################################
+# ROCm Base Stage
+ARG BASE_IMAGE="registry.access.redhat.com/ubi9/ubi:latest"
+FROM ${BASE_IMAGE} as rocm-base
+
+# Add ROCm repository and install ROCm packages
+RUN echo "[amdgpu]" > /etc/yum.repos.d/amdgpu.repo && \
+    echo "name=amdgpu" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "baseurl=https://repo.radeon.com/amdgpu/6.1.2/rhel/9.4/main/x86_64/" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "enabled=1" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "priority=50" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "gpgcheck=1" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "[ROCm-6.1.2]" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "name=ROCm6.1.2" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "baseurl=https://repo.radeon.com/rocm/rhel9/6.1.2/main" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "enabled=1" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "priority=50" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "gpgcheck=1" >> /etc/yum.repos.d/amdgpu.repo && \
+    echo "gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key" >> /etc/yum.repos.d/amdgpu.repo
+
+
+RUN yum -y install rocm hipcc && yum clean all
+
+# Add ROCm libraries to the linker path
+RUN echo "/opt/rocm/lib" >> /etc/ld.so.conf.d/rocm.conf && \
+    echo "/opt/rocm/lib64" >> /etc/ld.so.conf.d/rocm.conf
+
+
+# Set environment variables for ROCm
+ENV PATH=$PATH:/opt/rocm-6.1.2/bin
+
+#####################################################################################################
+
+# PyTorch Installation Stage
+FROM rocm-base as pytorch
+
+ARG PYTHON_VERSION=3.9
+
+# Install Python and dependencies
+RUN yum -y install python${PYTHON_VERSION} python${PYTHON_VERSION}-pip python${PYTHON_VERSION}-devel patch
+
+# Required check by the pytorch-controller, where even if python3 is installed
+# it must me symlinked and added to path to pass the python check.
+RUN ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python
+RUN cp -r /usr/bin/python3 /usr/bin/python
+ENV PATH="/usr/bin/python:${PATH}"
+
+# Upgrade pip and install Python packages
+RUN python${PYTHON_VERSION} -m pip install --upgrade pip
+# Verify if these deps are required for training-operator also combine into one command for optimization.
+# Keeping it separate for now for debugging.
+RUN python${PYTHON_VERSION} -m pip install --no-cache-dir tokenizers pandas
+RUN python${PYTHON_VERSION} -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements.txt file into the container
+COPY requirements.txt /app/requirements.txt
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the Python package and its source code into the container
+COPY . /app
+
+# Run storage.py when the container launches
+ENTRYPOINT ["torchrun", "hf_llm_training.py"]
