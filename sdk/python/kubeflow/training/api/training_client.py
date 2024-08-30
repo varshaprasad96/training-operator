@@ -259,7 +259,7 @@ class TrainingClient(object):
         # create app container spec
         container_spec = utils.get_container_spec(
             name=constants.JOB_PARAMETERS[constants.PYTORCHJOB_KIND]["container"],
-            base_image=constants.TRAINER_TRANSFORMER_IMAGE,
+            base_image="quay.io/vnarsing/kfto:latest",
             args=[
                 "--model_uri",
                 model_provider_parameters.model_uri,
